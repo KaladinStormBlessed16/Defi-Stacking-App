@@ -20,6 +20,7 @@ class App extends Component {
       rwdTokenBalance: "0",
       stakingBalance: "0",
       timestamp: "0",
+      welcomeGranted: false,
       loadingMainComponent: true,
       loadingTransaction: false,
     };
@@ -49,7 +50,7 @@ class App extends Component {
       window.alert("tether contract not deployed to detect network");
     }
 
-    //LOAD RWD TOKEN
+    // //LOAD RWD TOKEN
     const rwdTokenData = RWD.networks[networkId];
     if (rwdTokenData) {
       const rwd = new web3.eth.Contract(RWD.abi, rwdTokenData.address);
@@ -62,7 +63,7 @@ class App extends Component {
       window.alert("Reward Token contract not deployed to detect network");
     }
 
-    //Load DecentralBank
+    // //Load DecentralBank
     const decentralBankData = DecentralBank.networks[networkId];
     if (decentralBankData) {
       const decentralBank = new web3.eth.Contract(
@@ -73,17 +74,20 @@ class App extends Component {
       let stakingBalance = await decentralBank.methods
         .stakingBalance(this.state.account)
         .call();
-      this.setState({
-        stakingBalance: stakingBalance.toString(),
-      });
       let timestamp = await decentralBank.methods
         .timestamps(this.state.account)
         .call();
-      this.setState({
-        timestamp: timestamp.toString(),
-      });
+      let welcomeGranted = await decentralBank.methods
+        .welcomeGranted(this.state.account)
+        .call();
+        this.setState({
+          stakingBalance: stakingBalance.toString(),
+          timestamp: timestamp.toString(),
+          welcomeGranted: welcomeGranted
+        });
+        console.log(this.state)
     } else {
-      window.alert("TokenForm contract not deployed to detect network");
+      console.log("Decentral Bank contract not deployed to detect network");
     }
 
     this.setState({ loadingMainComponent: false });
@@ -132,7 +136,18 @@ class App extends Component {
   rewardTokens = async () => {
     this.setState({ loadingTransaction: true });
     this.state.decentralBank.methods
-      .issueTokens(this.state.account)
+      .issueTokens()
+      .send({ from: this.state.account })
+      .on("receipt", async (hash) => {
+        this.setState({ loadingTransaction: false });
+        await this.loadBlockchainData();
+      });
+  };
+
+  grantWelcomePack = async () => {
+    this.setState({ loadingTransaction: true });
+    this.state.decentralBank.methods
+      .issueTether()
       .send({ from: this.state.account })
       .on("receipt", async (hash) => {
         this.setState({ loadingTransaction: false });
@@ -159,10 +174,12 @@ class App extends Component {
             rwdBalance={this.state.rwdTokenBalance}
             stakingBalance={this.state.stakingBalance}
             timestamp={this.state.timestamp}
+            welcomeGranted={this.welcomeGranted}
+            decentralBankContract={this.decentralBank}
             stakeTokens={this.stakeTokens}
             unstakeTokens={this.unstakeTokens}
             rewardTokens={this.rewardTokens}
-            decentralBankContract={this.decentralBank}
+            grantWelcomePack={this.grantWelcomePack}
           />
         ));
 
@@ -186,7 +203,15 @@ class App extends Component {
           </div>
         </div>
         {(this.state.loadingTransaction || this.state.loadingMainComponent) && (
-          <div className="loadingSpinner" style={{ position: 'absolute', top: '50%', left: '48%', zIndex: '3'}}>
+          <div
+            className="loadingSpinner"
+            style={{
+              position: "absolute",
+              top: "50%",
+              left: "48%",
+              zIndex: "3",
+            }}
+          >
             <div
               className="spinner-border text-warning"
               role="status"

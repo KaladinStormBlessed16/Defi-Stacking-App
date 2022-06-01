@@ -9,7 +9,7 @@ require("chai")
 contract("DecentralBank", ([owner, customer]) => {
   let tether, rwd, decentralBank;
 
-  function toEther(number) {
+  function toWei(number) {
     return web3.utils.toWei(number, "ether");
   }
 
@@ -18,15 +18,22 @@ contract("DecentralBank", ([owner, customer]) => {
     rwd = await RWD.new();
     decentralBank = await DecentralBank.new(rwd.address, tether.address);
 
-    const totalSupply = await rwd.totalSupply();
-    await rwd.transfer(decentralBank.address, totalSupply.toString());
-    await tether.transfer(customer, toEther("100"), { from: owner });
+    const rwdTotalSupply = await rwd.totalSupply();
+    const tetherTotalSupply = await tether.totalSupply();
+    await rwd.transfer(decentralBank.address, rwdTotalSupply.toString());
+    await tether.transfer(decentralBank.address, tetherTotalSupply.toString());
   });
 
   describe("Mock Tether Token", async () => {
     it("matches name succesfully", async () => {
       const name = await tether.name();
       assert.equal(name, "Mock Tether Token");
+    });
+
+    it("total supply is sent to decentralBank", async () => {
+      const balance = await tether.balanceOf(decentralBank.address);
+      const totalSupply = await tether.totalSupply();
+      assert.equal(balance.toString(), totalSupply.toString());
     });
   });
 
@@ -37,17 +44,9 @@ contract("DecentralBank", ([owner, customer]) => {
     });
 
     it("total supply is sent to decentralBank", async () => {
-        const balance = await rwd.balanceOf(decentralBank.address);
-        const totalSupply = await rwd.totalSupply();
-        assert.equal(balance.toString(), totalSupply.toString());
-      });
-  });
-
-  describe("Customer account", async () => {
-    it("recieves 100 Tether", async () => {
-      const balance = await tether.balanceOf(customer);
-      const expectedFunds = toEther("100");
-      assert.equal(balance.toString(), expectedFunds);
+      const balance = await rwd.balanceOf(decentralBank.address);
+      const totalSupply = await rwd.totalSupply();
+      assert.equal(balance.toString(), totalSupply.toString());
     });
   });
 
@@ -58,8 +57,17 @@ contract("DecentralBank", ([owner, customer]) => {
     });
 
     it("stack and unstack tokens from customer", async () => {
-      const FUNDS = toEther("100");
+      const FUNDS = toWei("100");
       let stackedBalance, customerBalance;
+
+      await decentralBank.issueTether({ from: customer });
+
+      customerBalance = await tether.balanceOf(customer);
+      assert.equal(
+        FUNDS,
+        customerBalance.toString(),
+        "Customer received the welcome funds"
+      );
 
       await tether.approve(decentralBank.address, FUNDS, { from: customer });
       const result = await decentralBank.depositTokens(FUNDS, {
@@ -69,7 +77,7 @@ contract("DecentralBank", ([owner, customer]) => {
       customerBalance = await tether.balanceOf(customer);
       assert.equal(
         customerBalance.toString(),
-        toEther("0"),
+        toWei("0"),
         "Customer has no funds"
       );
 
@@ -80,34 +88,36 @@ contract("DecentralBank", ([owner, customer]) => {
         "Expected funds of customer are staking"
       );
 
-      function timeout(ms) {
-        return new Promise((resolve) => setTimeout(resolve, ms));
-      }
-      await timeout(60000);
+      // function timeout(ms) {
+      //   return new Promise((resolve) => setTimeout(resolve, ms));
+      // }
 
-      await decentralBank.issueTokens(owner, { from: customer }).should.be.rejected;
-      await decentralBank.issueTokens(customer, { from: customer });
+      await decentralBank.issueTokens({ from: customer }).should.be.rejected;
 
-      customerRWDBalance = await rwd.balanceOf(customer);
-      assert.equal(
-        customerRWDBalance.toString(),
-        toEther("10"),
-        "Customer has received the reward tokens for staking"
-      );
+      // await timeout(60000);
 
-      await decentralBank.unstakeTokens({ from: customer });
-      stackedBalance = await decentralBank.stakingBalance(customer);
-      assert.equal(
-        stackedBalance.toString(),
-        toEther("0"),
-        "Expected funds of customer are unstaking"
-      );
-      customerBalance = await tether.balanceOf(customer);
-      assert.equal(
-        customerBalance.toString(),
-        FUNDS,
-        "Customer has funds back"
-      );
+      // await decentralBank.issueTokens( { from: customer });
+
+      // customerRWDBalance = await rwd.balanceOf(customer);
+      // assert.equal(
+      //   customerRWDBalance.toString(),
+      //   toWei("2"),
+      //   "Customer has received the reward tokens for staking"
+      // );
+
+      // await decentralBank.unstakeTokens({ from: customer });
+      // stackedBalance = await decentralBank.stakingBalance(customer);
+      // assert.equal(
+      //   stackedBalance.toString(),
+      //   toWei("0"),
+      //   "Expected funds of customer are unstaking"
+      // );
+      // customerBalance = await tether.balanceOf(customer);
+      // assert.equal(
+      //   customerBalance.toString(),
+      //   FUNDS,
+      //   "Customer has funds back"
+      // );
     });
   });
 });

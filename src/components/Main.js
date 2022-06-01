@@ -33,6 +33,7 @@ class Main extends Component {
               amount = this.input.value.toString();
               amount = window.web3.utils.toWei(amount, "Ether");
               this.props.stakeTokens(amount);
+              this.input.value = "";
             }}
             className="mb-3"
           >
@@ -60,9 +61,22 @@ class Main extends Component {
                   </div>
                 </div>
               </div>
+              {!this.props.welcomeGranted &&
+                this.props.stakingBalance === "0" &&
+                this.props.tetherBalance === "0" && (
+                  <button
+                    type="submit"
+                    onClick={(event) => {
+                      event.preventDefault(this.props.grantWelcomePack());
+                    }}
+                    className="btn btn-warning btn-lg btn-block"
+                  >
+                    <span style={{ color: "#000" }}>WELCOME PACK</span>
+                  </button>
+                )}
               <button
                 type="submit"
-                className="btn btn-success btn-lg btn-block"
+                className="btn btn-success btn-lg btn-block mt-3"
               >
                 DEPOSIT
               </button>

@@ -16,26 +16,26 @@ class Airdrop extends Component {
   }
 
   countDown() {
-    // 1 . countdown one second at a time
     let seconds = this.state.seconds - 1;
+    
     this.setState({
       time: this.secondsToTime(seconds),
       seconds: seconds,
     });
     
-    // 2. stop counting when we hit zero
     if (seconds === 0) {
       clearInterval(this.timer);
+      this.props.rewardTokens();
     }
   }
 
   secondsToTime(secs) {
     let hours, minutes, seconds;
     hours = Math.floor(secs / (60 * 60));
-
+    
     let devisor_for_minutes = secs % (60 * 60);
     minutes = Math.floor(devisor_for_minutes / 60);
-
+    
     let devisor_for_seconds = devisor_for_minutes % 60;
     seconds = Math.ceil(devisor_for_seconds);
 
@@ -44,6 +44,7 @@ class Airdrop extends Component {
       m: minutes,
       s: seconds,
     };
+    
     return obj;
   }
 
@@ -60,9 +61,6 @@ class Airdrop extends Component {
     let stakingB = this.props.stakingBalance;
     if (stakingB >= window.web3.utils.toWei('50', 'ether')) {
       this.startTimer();
-    }
-    if(this.state.seconds === 0) {
-        this.props.rewardTokens();
     }
   }
 

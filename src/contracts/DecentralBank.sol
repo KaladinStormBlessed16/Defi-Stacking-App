@@ -8,10 +8,12 @@ contract DecentralBank {
     string public name = "Decentral Bank";
     Tether public tether;
     RWD public rwd;
-
+    uint256 private WELCOME_REWARD = 100000000000000000000;
+    
     address[] public stakers;
     mapping(address => uint256) public stakingBalance;
     mapping(address => uint256) public timestamps;
+    mapping(address => bool) public welcomeGranted;
 
     constructor(RWD _rwd, Tether _tether) public {
         owner = msg.sender;
@@ -30,18 +32,26 @@ contract DecentralBank {
         stakingBalance[msg.sender] += _amount;
     }
 
-    function issueTokens(address _to) public {
-        require(stakingBalance[_to] > 0);
+    function issueTokens() public {
+        require(stakingBalance[msg.sender] > 0);
         require(    
-            now >= timestamps[_to] + 60 minutes ,
+            now >= timestamps[msg.sender] + 60 minutes ,
             "Stacking cycle has not finished"
         );
 
-        uint256 balance = stakingBalance[_to] / 50;
+        uint256 balance = stakingBalance[msg.sender] / 50;
         if (balance > 0) {
-            rwd.transfer(_to, balance);
-            timestamps[_to] = now;
+            rwd.transfer(msg.sender, balance);
+            timestamps[msg.sender] = now;
         }
+    }
+
+    function issueTether() public {
+        require(stakingBalance[msg.sender] == 0);
+        require(!welcomeGranted[msg.sender]);
+
+        tether.transfer(msg.sender, WELCOME_REWARD);
+        welcomeGranted[msg.sender] = true;
     }
 
     function unstakeTokens() public {
