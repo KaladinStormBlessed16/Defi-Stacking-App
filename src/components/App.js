@@ -47,7 +47,7 @@ class App extends Component {
         .call();
       this.setState({ tetherBalance: tetherBalance.toString() });
     } else {
-      window.alert("tether contract not deployed to detect network");
+      console.log("tether contract not deployed to detect network");
     }
 
     // //LOAD RWD TOKEN
@@ -60,7 +60,7 @@ class App extends Component {
         .call();
       this.setState({ rwdTokenBalance: rwdTokenBalance.toString() });
     } else {
-      window.alert("Reward Token contract not deployed to detect network");
+      console.log("Reward Token contract not deployed to detect network");
     }
 
     // //Load DecentralBank
@@ -80,12 +80,12 @@ class App extends Component {
       let welcomeGranted = await decentralBank.methods
         .welcomeGranted(this.state.account)
         .call();
-        this.setState({
-          stakingBalance: stakingBalance.toString(),
-          timestamp: timestamp.toString(),
-          welcomeGranted: welcomeGranted
-        });
-        console.log(this.state)
+      this.setState({
+        stakingBalance: stakingBalance.toString(),
+        timestamp: timestamp.toString(),
+        welcomeGranted: welcomeGranted,
+      });
+      console.log(this.state);
     } else {
       console.log("Decentral Bank contract not deployed to detect network");
     }
@@ -163,9 +163,9 @@ class App extends Component {
           <p
             id="loader"
             className="text-center"
-            style={{ color: "white", margin: "30px" }}
+            style={{ color: "white", margin: "30px", marginTop: "40vh" }}
           >
-            LOADING PLEASE...
+            READING ETHEREUM WALLET...
           </p>
         ))
       : (content = (
